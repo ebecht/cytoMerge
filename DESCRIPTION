@@ -1,0 +1,27 @@
+Package: cytoMerge
+Title: Merge Cytometry Data Across Different Antibody Panels Profiling The Same Sample
+Version: 0.0.0.9000
+Authors@R: 
+    person(given = "Etienne",
+           family = "Becht",
+           role = c("aut", "cre"),
+           email = "etienne.becht@protonmail.com")
+Description: For each pair of FCS files, normalize data for shared markers using quantile-normalization. Then train machine leraning models to predict distinct markers from shared markers. Finally, uses UMAP on either shared or shared + predicted markers to visualize the expression of predicted markers. Reports prediction quality metrics. Exports FCS files with predicted data in native flow cytometry units.
+License: GPL (>= 3)
+Encoding: UTF-8
+LazyData: true
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.1.1
+Suggests:
+Depends: flowCore
+Imports: uwot,
+    preprocessCore,
+    xgboost,
+    tools,
+    grid,
+    graphics,
+    grDevices,
+    utils,
+    png,
+    raster
+Language: en-US
