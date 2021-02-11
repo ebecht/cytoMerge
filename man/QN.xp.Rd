@@ -6,6 +6,11 @@
 \usage{
 QN.xp(xp_mat, groups)
 }
+\arguments{
+\item{xp_mat}{a numeric matrix}
+
+\item{groups}{a vector of length nrow(xp_mat)}
+}
 \description{
 Quantile normalization on a matrix + vector of groups (splitting by rows)
 }

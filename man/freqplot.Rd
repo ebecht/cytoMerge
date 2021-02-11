@@ -15,6 +15,21 @@ freqplot(
   ...
 )
 }
+\arguments{
+\item{x}{numerical vector}
+
+\item{y}{numerical vector}
+
+\item{breaks}{Number of bins}
+
+\item{na.rm}{Whether to exclude NAs from x and y}
+
+\item{palette}{color palette for the heatmap}
+
+\item{add_white}{Boolean. Whether to add white at the beginning of the palette (for counts of 0 in the 2D histogram)}
+
+\item{...}{passed to image()}
+}
 \description{
 Heatmap for 2D histograms
 }

@@ -51,16 +51,21 @@
 #' @param umap_params List of named arguments passed to uwot::umap().
 #' @param chop_quantiles numeric (should be close to 0). If do_UMAP_and_plot is TRUE, on the PDF plots this will clip the top and bottom parts of the data to the corresponding quantile. Defaults to 0.005 (so the bottom 0.005 and top 0.995 quantiles are clipped). This only affect the color-mapping of the plots, not the predictions or UMAP embeddings.
 #' @param train_set_fraction Fraction of the data to use as training set. Performance will be computed on the train and test sets. Defaults to 0.8.
-## #' @importFrom flowCore read.FCS
-## #' @importFrom flowCore estimateLogicle
-## #' @importFrom flowCore write.FCS
-## #' @importFrom flowCore inverseLogicleTransform
+#' @importFrom flowCore read.FCS
+#' @importFrom flowCore estimateLogicle
+#' @importFrom flowCore write.FCS
+#' @importFrom flowCore inverseLogicleTransform
+#' @importFrom flowCore fr_append_cols
 #' @importFrom uwot umap
 #' @importFrom xgboost xgboost
 #' @importFrom tools file_path_sans_ext
-## #' @importFrom Biobase pData
-## #' @importFrom Biobase pData<-
-## #' @importFrom Biobase exprs
+#' @importFrom grDevices hcl.colors
+#' @importFrom graphics abline axis image legend mtext title
+#' @importFrom stats approx cor predict quantile runif setNames
+#' @importFrom utils combn write.csv
+#' @importFrom Biobase pData
+#' @importFrom Biobase pData<-
+#' @importFrom Biobase exprs
 merge_flow_panels = function(
                              input_files,
                              excluded_markers = character(),
@@ -638,7 +643,7 @@ merge_flow_panels = function(
                 )
                 
                 for(type in c("backbone", "augmented")){
-                    infinityFlow:::color_biplot_by_channels(
+                    color_biplot_by_channels(
                                        all_data,
                                        x_axis = paste0("UMAP1_", type),
                                        y_axis = paste0("UMAP2_", type),
@@ -653,7 +658,7 @@ merge_flow_panels = function(
                                    )
                 }        
             }
-            write.FCS(fcs_out, file = file.path(output_dir, basename(id)))
+            write.FCS(fcs_out, filename = file.path(output_dir, basename(id)))
             return(fcs_out)
         }
     )
@@ -718,7 +723,7 @@ merge_flow_panels = function(
                         freqplot(x, y, main = "train set")
                         title(xlab = "measured", ylab = "predicted")
                         R2_train = cor(x, y)
-                        legend(x = "topleft", legend = paste0("R² = ", signif(R2_train^2, 2)), bty = "n")
+                        legend(x = "topleft", legend = paste0("R2 = ", signif(R2_train^2, 2)), bty = "n")
                         abline(a = 0, b = 1, lty = 3)
                         main = "train set"
                         x = data[["0"]][, "measured"]
@@ -727,7 +732,7 @@ merge_flow_panels = function(
                         title(xlab = "measured", ylab = "predicted")
                         R2_pred = cor(x, y)
                         main = "test set"
-                        legend(x = "topleft", legend = paste0("R² = ", signif(R2_pred^2, 2)), bty = "n")
+                        legend(x = "topleft", legend = paste0("R2 = ", signif(R2_pred^2, 2)), bty = "n")
                         abline(a = 0, b = 1, lty = 3)                            
                         mtext(side = 3, at = 0.5, text = paste0(channel, " (", panels_forward[[id]][channel], ")"), outer = TRUE)
                         dev.off()
@@ -768,8 +773,10 @@ merge_flow_panels = function(
 ## Helper functions
 ## ##################
 
-## Quantile normalization
+#' Quantile normalization for multiple vectors of possibly different sizes
 #' @importFrom preprocessCore normalize.quantiles
+#' @param lov a list of numeric vectors
+#' @note Uses linear interpolation if the sizes are different
 QN = function (lov){
     w.n = which.max(sapply(lov, length))
     n = length(lov[[w.n]])
@@ -786,6 +793,8 @@ QN = function (lov){
 }
 
 #' Quantile normalization on a matrix + vector of groups (splitting by rows) 
+#' @param xp_mat a numeric matrix
+#' @param groups a vector of length nrow(xp_mat)
 QN.xp = function (xp_mat, groups){
     o = order(unlist(split(1:nrow(xp_mat), groups), use.names = FALSE))
     apply(xp_mat, 2, function(x) {
@@ -794,6 +803,9 @@ QN.xp = function (xp_mat, groups){
 }
 
 #' splitting a matrix to a list by a margin according to a vector of groups
+#' @param mat a numeric matrix
+#' @param vector a vector of groups labels
+#' @param byrow boolean. Whether to split by rows or columns
 split_matrix = function (mat, vector, byrow = TRUE){
     if (byrow & nrow(mat) != length(vector)) {
         stop("if byrow=TRUE, vector's length should have length nrow(mat)")
@@ -818,6 +830,13 @@ split_matrix = function (mat, vector, byrow = TRUE){
 }
 
 #' Heatmap for 2D histograms
+#' @param x numerical vector
+#' @param y numerical vector
+#' @param breaks Number of bins
+#' @param na.rm Whether to exclude NAs from x and y
+#' @param palette color palette for the heatmap
+#' @param add_white Boolean. Whether to add white at the beginning of the palette (for counts of 0 in the 2D histogram)
+#' @param ... passed to image()
 freqplot = function (x, y, breaks = 200, na.rm = TRUE, palette = rev(c("#A50026", 
     "#D73027", "#F46D43", "#FDAE61", "#FEE090", "#FFFFBF", "#E0F3F8", 
     "#ABD9E9", "#74ADD1", "#4575B4", "#313695")), add_white = TRUE, 
@@ -896,7 +915,6 @@ freqplot = function (x, y, breaks = 200, na.rm = TRUE, palette = rev(c("#A50026"
 
 
 #' Colors points of a biplot (2d-tSNE, 2d-PCA...) by the intensity of channels for each flowframe in the flowset
-#'
 #' @param matrix A matrix
 #' @param x_axis A column name of matrix used in biplots as the x axis
 #' @param y_axis A column name of matrix used in biplots as the y axis
@@ -1041,3 +1059,5 @@ color_biplot_by_channels <- function(
     }
     NULL
 }
+
+utils::globalVariables(c("predictions_leave_one_out_backbone", "predictions_variable_targets", "events.code", "predictors")) ## These are passed from the predictions object and assigned from its named list return

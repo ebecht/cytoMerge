@@ -6,6 +6,13 @@
 \usage{
 split_matrix(mat, vector, byrow = TRUE)
 }
+\arguments{
+\item{mat}{a numeric matrix}
+
+\item{vector}{a vector of groups labels}
+
+\item{byrow}{boolean. Whether to split by rows or columns}
+}
 \description{
 splitting a matrix to a list by a margin according to a vector of groups
 }

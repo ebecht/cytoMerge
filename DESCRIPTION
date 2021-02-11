@@ -23,5 +23,6 @@ Imports: uwot,
     grDevices,
     utils,
     png,
-    raster
+    raster,
+    Biobase
 Language: en-US
